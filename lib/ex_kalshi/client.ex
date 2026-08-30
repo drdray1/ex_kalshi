@@ -116,8 +116,12 @@ defmodule ExKalshi.Client do
   @doc """
   Verifies credentials with `GET /portfolio/balance`.
 
-  Returns `{:ok, balance}` on success, `{:error, :unauthorized}` on a bad key,
-  `{:error, {:invalid_private_key, reason}}` when the PEM cannot be parsed.
+  Returns `{:ok, balance}` on success, `{:error, {:unauthorized, detail}}` when
+  Kalshi rejects the key (`detail` is the exchange's reason — `"NOT_FOUND"`
+  means the key id does not exist on *this* exchange: demo keys only work
+  with `demo: true`, production keys without it), `{:error, :unauthorized}`
+  when no detail is given, and `{:error, {:invalid_private_key, reason}}`
+  when the PEM cannot be parsed.
   """
   @spec verify_credentials(String.t(), String.t(), boolean() | keyword()) :: response()
   def verify_credentials(key_id, private_key_pem, opts \\ false)
@@ -132,7 +136,7 @@ defmodule ExKalshi.Client do
         key_id
         |> new(private_key_pem, opts)
         |> Req.get(url: "/portfolio/balance")
-        |> handle_response()
+        |> verify_response()
         |> log_verify_failure()
 
       {:error, reason} ->
@@ -192,6 +196,25 @@ defmodule ExKalshi.Client do
   defp normalize_body(""), do: %{}
   defp normalize_body(nil), do: %{}
   defp normalize_body(body), do: body
+
+  # Keep Kalshi's authentication detail for the verify path only.
+  defp verify_response({:ok, %Req.Response{status: 401, body: body}}) do
+    case auth_detail(body) do
+      nil -> {:error, :unauthorized}
+      detail -> {:error, {:unauthorized, detail}}
+    end
+  end
+
+  defp verify_response(result), do: handle_response(result)
+
+  defp auth_detail(%{"error" => %{} = err}), do: auth_detail(err)
+
+  defp auth_detail(%{"details" => details, "message" => message})
+       when is_binary(details) and details != "",
+       do: "#{message} (#{details})"
+
+  defp auth_detail(%{"message" => message}) when is_binary(message) and message != "", do: message
+  defp auth_detail(_), do: nil
 
   defp log_verify_failure({:error, reason} = result) do
     Logger.warning("Kalshi credential verification failed: #{inspect(reason)}")
