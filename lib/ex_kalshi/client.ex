@@ -162,6 +162,16 @@ defmodule ExKalshi.Client do
 
   def handle_response({:ok, %Req.Response{status: 401}}), do: {:error, :unauthorized}
   def handle_response({:ok, %Req.Response{status: 403}}), do: {:error, :forbidden}
+  # Kalshi answers 404 both for a missing resource (bare) and for account-level
+  # refusals such as `user_not_found` on order creation for an account that has
+  # not finished onboarding; keep the latter's code so callers can tell them apart.
+  def handle_response(
+        {:ok, %Req.Response{status: 404, body: %{"error" => %{"code" => code} = error}}}
+      )
+      when is_binary(code) do
+    {:error, {:not_found, "#{extract_error_message(%{"error" => error})} (#{code})"}}
+  end
+
   def handle_response({:ok, %Req.Response{status: 404}}), do: {:error, :not_found}
   def handle_response({:ok, %Req.Response{status: 429}}), do: {:error, :rate_limited}
 

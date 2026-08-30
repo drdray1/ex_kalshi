@@ -18,7 +18,8 @@ defmodule ExKalshi do
   Streaming lives in `ExKalshi.WebSocket.Connection`.
 
   Every function returns `{:ok, map}` or `{:error, reason}` where `reason` is
-  `:unauthorized`, `:forbidden`, `:not_found`, `:rate_limited`,
+  `:unauthorized`, `:forbidden`, `:not_found` (or `{:not_found, detail}` when Kalshi
+  names a code, e.g. `user_not_found`), `:rate_limited`,
   `{:api_error, status, message}`, `{:connection_error, term}`,
   `{:validation_error, [String.t()]}` or `{:signature_failed, term}`.
   """

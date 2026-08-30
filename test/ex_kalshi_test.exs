@@ -40,6 +40,8 @@ defmodule ExKalshiTest do
   end
 
   test "every delegate exists" do
+    Code.ensure_loaded!(ExKalshi)
+
     for {fun, arity} <- [
           verify_credentials: 3,
           exchange_schedule: 1,

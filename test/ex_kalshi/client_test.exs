@@ -62,6 +62,18 @@ defmodule ExKalshi.ClientTest do
       assert {:error, :unauthorized} = Client.handle_response({:ok, %Req.Response{status: 401}})
       assert {:error, :forbidden} = Client.handle_response({:ok, %Req.Response{status: 403}})
       assert {:error, :not_found} = Client.handle_response({:ok, %Req.Response{status: 404}})
+
+      assert {:error, {:not_found, "user not found (user_not_found)"}} =
+               Client.handle_response(
+                 {:ok,
+                  %Req.Response{
+                    status: 404,
+                    body: %{
+                      "error" => %{"code" => "user_not_found", "message" => "user not found"}
+                    }
+                  }}
+               )
+
       assert {:error, :rate_limited} = Client.handle_response({:ok, %Req.Response{status: 429}})
 
       assert {:error, {:unexpected_status, 302}} =
