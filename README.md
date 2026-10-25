@@ -10,7 +10,7 @@ managed WebSocket connection for orderbooks, tickers, trades, fills and order up
 ```elixir
 def deps do
   [
-    {:ex_kalshi, git: "https://github.com/drdray1/ex_kalshi.git", tag: "0.1.2"}
+    {:ex_kalshi, git: "https://github.com/drdray1/ex_kalshi.git", tag: "0.1.3"}
   ]
 end
 ```
